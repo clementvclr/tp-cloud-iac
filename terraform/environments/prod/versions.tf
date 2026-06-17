@@ -21,5 +21,11 @@ provider "proxmox" {
     agent    = false
     username = var.proxmox_ssh_user
     password = var.proxmox_ssh_password
+
+    node {
+      name    = var.target_node
+      address = var.proxmox_host
+      port    = var.proxmox_ssh_port
+    }
   }
 }

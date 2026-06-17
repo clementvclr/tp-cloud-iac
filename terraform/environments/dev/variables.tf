@@ -1,9 +1,9 @@
 # =============================================================================,
-# variables.tf — Variables d'environnement (prod),
+# variables.tf - Variables d'environnement (prod),
 # =============================================================================,
 # ---- Connexion Proxmox ----,
 variable "proxmox_endpoint" {
-  description = "URL complète de l'API Proxmox (ex: https://1.2.3.4:8006/)"
+  description = "URL complete de l'API Proxmox (ex: https://82.64.141.52:3007/) "
   type        = string
 }
 
@@ -14,7 +14,7 @@ variable "proxmox_api_token" {
 }
 
 variable "proxmox_insecure" {
-  description = "Désactive la vérification TLS (utile pour les certifs auto-signés)"
+  description = "Desactive la verification TLS (utile pour les certifs auto-signes)"
   type        = bool
   default     = true
 }
@@ -31,6 +31,17 @@ variable "proxmox_ssh_password" {
   sensitive   = true
 }
 
+variable "proxmox_host" {
+  description = "IP ou hostname du node Proxmox (pour la connexion SSH)"
+  type        = string
+}
+
+variable "proxmox_ssh_port" {
+  description = "Port SSH du node Proxmox"
+  type        = number
+  default     = 22
+}
+
 # ---- Infra ----,
 variable "target_node" {
   description = "Nom du node Proxmox cible"
@@ -38,7 +49,7 @@ variable "target_node" {
 }
 
 variable "template_id" {
-  description = "ID du template cloud-init à cloner"
+  description = "ID du template cloud-init a cloner"
   type        = number
 }
 
@@ -54,18 +65,18 @@ variable "snippet_storage" {
 }
 
 variable "network_bridge" {
-  description = "Bridge réseau"
+  description = "Bridge reseau"
   type        = string
   default     = "vmbr0"
 }
 
 variable "gateway" {
-  description = "Passerelle réseau"
+  description = "Passerelle reseau"
   type        = string
 }
 
 variable "db_ip" {
-  description = "IP de la VM base de données (CIDR)"
+  description = "IP de la VM base de donnees (CIDR)"
   type        = string
 }
 

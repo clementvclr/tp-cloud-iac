@@ -1,5 +1,5 @@
 # =============================================================================,
-# versions.tf — Déclaration du provider Proxmox au niveau environnement,
+# versions.tf - Declaration du provider Proxmox au niveau environnement,
 # =============================================================================,
 terraform {
   required_version = ">= 1.8.0"
@@ -17,10 +17,15 @@ provider "proxmox" {
   api_token = var.proxmox_api_token
   insecure  = var.proxmox_insecure
 
-  # SSH nécessaire pour upload des snippets cloud-init
   ssh {
     agent    = false
     username = var.proxmox_ssh_user
     password = var.proxmox_ssh_password
+
+    node {
+      name    = var.target_node
+      address = var.proxmox_host
+      port    = var.proxmox_ssh_port
+    }
   }
 }
