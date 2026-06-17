@@ -1,0 +1,12 @@
+extends: default
+
+rules:
+  # Cloud-init exige '#cloud-config' sans espace en première ligne
+  comments:
+    require-starting-space: false
+  # Les clés SSH dépassent forcément 80 caractères
+  line-length:
+    max: 200
+    level: warning
+  # Pas obligé d'avoir '---' en début de fichier
+  document-start: disable
