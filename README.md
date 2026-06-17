@@ -80,3 +80,37 @@ Le déploiement crée 2 VMs :
 
 - `prod-wiki-db` (VM ID 201) : future base PostgreSQL
 - `prod-wiki-app` (VM ID 202) : future application Wiki.js
+
+
+### Procédure de déploiement vérifiée
+
+1. Créer le template cloud-init sur Proxmox (une seule fois) :
+
+bash
+   ssh -p 3007 root@<proxmox-host>
+   cd /var/lib/vz/template/iso
+   wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+   qm create 9000 --name ubuntu-24-04-cloudinit --memory 2048 --cores 2 \
+     --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single \
+     --serial0 socket --vga serial0 --agent enabled=1
+   qm importdisk 9000 noble-server-cloudimg-amd64.img local-lvm
+   qm set 9000 --scsi0 local-lvm:vm-9000-disk-0,discard=on,ssd=1
+   qm set 9000 --ide2 local-lvm:cloudinit
+   qm set 9000 --boot order=scsi0
+   qm set 9000 --kvm 0 --cpu qemu64    # nécessaire pour virtualisation imbriquée
+   qm template 9000
+
+
+2. Activer le content type `snippets` sur le datastore `local` (une seule fois) :
+bash
+   pvesm set local --content backup,iso,vztmpl,import,snippets
+
+
+3. Déployer l'infrastructure :
+bash
+   cd terraform/environments/prod
+   cp terraform.tfvars.example terraform.tfvars
+   # éditer terraform.tfvars avec les vraies valeurs
+   tofu init
+   tofu plan
+   tofu apply
