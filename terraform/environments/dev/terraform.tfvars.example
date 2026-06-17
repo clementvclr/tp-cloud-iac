@@ -1,24 +1,24 @@
 # =============================================================================,
 # terraform.tfvars.example — Modèle à copier en terraform.tfvars,
 # =============================================================================,
-Copie ce fichier : cp terraform.tfvars.example terraform.tfvars,
-Puis remplis les valeurs avec ce que le prof a fourni.,
-Le vrai terraform.tfvars NE DOIT PAS être commité (cf .gitignore).,
----- Connexion Proxmox ----,
-proxmox_endpoint     = "https://changeme:8006/"
+
+# ---- Connexion Proxmox ----,
+proxmox_endpoint     = "https://changeme:3006/"
 proxmox_api_token    = "user@pam!tokenname=00000000-0000-0000-0000-000000000000"
+proxmox_host         = "CHANGEME"
+proxmox_ssh_port     = 22
 proxmox_ssh_user     = "root"
 proxmox_ssh_password = "CHANGEME"
 proxmox_insecure     = true
 
----- Infra ----,
-target_node     = "CHANGEME"        # ex: "pve"
-template_id     = 9000              # ID du template cloud-init fourni par le prof
+# ---- Infra ----,
+target_node     = "CHANGEME"
+template_id     = 9000
 storage_pool    = "local-lvm"
 snippet_storage = "local"
 network_bridge  = "vmbr0"
 gateway         = "192.168.1.1"
 
----- IPs des VMs (notation CIDR) ----,
+# ---- IPs des VMs (notation CIDR) ----,
 db_ip  = "192.168.1.201/24"
 app_ip = "192.168.1.202/24"
