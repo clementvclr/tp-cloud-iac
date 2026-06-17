@@ -52,3 +52,31 @@ Le fichier `cloud-init/user-data.yaml` est exécuté au premier démarrage de ch
 - Durcit la configuration SSH (pas de root login, pas d'auth par mot de passe)
 
 Les clés SSH publiques sont commitées en clair dans ce fichier — c'est OK car les clés **publiques** sont prévues pour être partagées. Les clés **privées** correspondantes sont gérées par chaque membre individuellement et ne sont JAMAIS commitées (cf. `.gitignore`).
+
+## Étape 2 — OpenTofu
+
+### Architecture du code
+
+Le code OpenTofu suit un modèle module + environnements :
+
+- `terraform/modules/vm/` : module réutilisable de création de VM Proxmox avec cloud-init
+- `terraform/environments/prod/` : environnement de production (2 vCPU, 2 Go RAM, 20 Go)
+- `terraform/environments/dev/` : environnement de développement (1 vCPU, 1 Go RAM, 10 Go)
+
+Cette structure permet de redéployer un environnement strictement identique en changeant uniquement les valeurs du fichier `terraform.tfvars`.
+
+### Déploiement
+
+bash
+cd terraform/environments/prod
+cp terraform.tfvars.example terraform.tfvars
+# Éditer terraform.tfvars avec les vraies valeurs Proxmox
+tofu init
+tofu plan
+tofu apply
+
+
+Le déploiement crée 2 VMs :
+
+- `prod-wiki-db` (VM ID 201) : future base PostgreSQL
+- `prod-wiki-app` (VM ID 202) : future application Wiki.js

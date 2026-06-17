@@ -1,7 +1,7 @@
 # =============================================================================,
 # variables.tf — Variables d'environnement (prod),
 # =============================================================================,
----- Connexion Proxmox ----,
+# ---- Connexion Proxmox ----,
 variable "proxmox_endpoint" {
   description = "URL complète de l'API Proxmox (ex: https://1.2.3.4:8006/)"
   type        = string
@@ -31,7 +31,7 @@ variable "proxmox_ssh_password" {
   sensitive   = true
 }
 
----- Infra ----,
+# ---- Infra ----,
 variable "target_node" {
   description = "Nom du node Proxmox cible"
   type        = string

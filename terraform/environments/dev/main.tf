@@ -5,7 +5,7 @@ locals {
   user_data_path = "${path.module}/../../../cloud-init/user-data.yaml"
 }
 
-VM 1 — Base de données PostgreSQL (dev),
+# VM 1 — Base de données PostgreSQL (dev),
 module "vm_db" {
   source = "../../modules/vm"
 
@@ -25,7 +25,7 @@ module "vm_db" {
   tags            = ["dev", "database", "postgresql"]
 }
 
-VM 2 — Application Wiki.js (dev),
+# VM 2 — Application Wiki.js (dev),
 module "vm_app" {
   source = "../../modules/vm"
 
