@@ -1,0 +1,56 @@
+#cloud-config
+# =============================================================================
+# Cloud-init user-data — TP Fil Rouge
+# Ce fichier est exécuté UNE SEULE FOIS au premier démarrage de chaque VM.
+# Objectif : avoir une VM accessible en SSH par les membres du groupe,
+# avec Python3 et qemu-guest-agent pour la suite (Ansible + visibilité Proxmox).
+# =============================================================================
+
+# Locale et fuseau horaire
+locale: fr_FR.UTF-8
+timezone: Europe/Paris
+
+# Mise à jour des paquets au boot
+package_update: true
+package_upgrade: true
+
+# Paquets installés systématiquement
+packages:
+  - qemu-guest-agent     # Permet à Proxmox de voir l'IP et l'état de la VM
+  - python3              # Requis par Ansible
+  - python3-apt          # Requis pour le module apt d'Ansible
+  - curl
+  - ca-certificates
+  - sudo
+
+# Création de l'utilisateur dédié à l'administration / Ansible
+users:
+  - name: ansible
+    gecos: "Ansible automation user"
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true       # Aucun mot de passe : login SSH par clé uniquement
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIVPbGVCCpZnga0aa3z5JYTy/Eia5UaCqYOs3/7Tva67 tp-filrouge-root
+
+# Durcissement SSH : on interdit le login root et l'auth par mot de passe
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      PubkeyAuthentication yes
+      ChallengeResponseAuthentication no
+      UsePAM yes
+
+# Commandes lancées à la toute fin du provisioning
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - systemctl restart ssh
+  - echo "cloud-init finished at $(date)" > /var/log/cloud-init-done.log
+
+# Message affiché dans la console une fois cloud-init terminé
+final_message: "Cloud-init terminé en $UPTIME secondes. La VM est prête."
