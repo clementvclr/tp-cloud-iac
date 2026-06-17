@@ -1,8 +1,8 @@
 # =============================================================================,
-# outputs.tf - Informations exposees apres deploiement,
+# outputs.tf — Informations exposées après déploiement,
 # =============================================================================,
 output "db_vm" {
-  description = "Informations sur la VM base de donnees"
+  description = "Informations sur la VM base de données"
   value = {
     name = module.vm_db.vm_name
     id   = module.vm_db.vm_id

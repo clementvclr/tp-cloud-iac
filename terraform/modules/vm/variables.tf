@@ -1,5 +1,5 @@
 # =============================================================================
-# variables.tf — Paramètres d'entrée du module de création de VM
+# variables.tf - Parametres d'entree du module de creation de VM
 # =============================================================================
 
 variable "vm_name" {
@@ -8,28 +8,28 @@ variable "vm_name" {
 }
 
 variable "vm_id" {
-  description = "ID numérique unique de la VM dans Proxmox (ex: 200, 201...)"
+  description = "ID numerique unique de la VM dans Proxmox (ex: 200, 201...)"
   type        = number
 }
 
 variable "target_node" {
-  description = "Nom du node Proxmox sur lequel créer la VM"
+  description = "Nom du node Proxmox sur lequel creer la VM"
   type        = string
 }
 
 variable "template_id" {
-  description = "ID du template cloud-init Proxmox à cloner"
+  description = "ID du template cloud-init Proxmox a cloner"
   type        = number
 }
 
 variable "cpu_cores" {
-  description = "Nombre de cœurs CPU"
+  description = "Nombre de coeurs CPU"
   type        = number
   default     = 2
 }
 
 variable "memory_mb" {
-  description = "RAM en mégaoctets"
+  description = "RAM en megaoctets"
   type        = number
   default     = 2048
 }
@@ -51,7 +51,7 @@ variable "snippet_storage" {
 }
 
 variable "network_bridge" {
-  description = "Bridge réseau Proxmox (ex: vmbr0)"
+  description = "Bridge reseau Proxmox (ex: vmbr0)"
   type        = string
   default     = "vmbr0"
 }
@@ -62,7 +62,7 @@ variable "ip_address" {
 }
 
 variable "gateway" {
-  description = "Passerelle réseau (ignoré si ip_address = dhcp)"
+  description = "Passerelle reseau (ignore si ip_address = dhcp)"
   type        = string
   default     = ""
 }
@@ -79,7 +79,7 @@ variable "user_data_path" {
 }
 
 variable "tags" {
-  description = "Liste de tags Proxmox pour identifier la VM (ex: [\"prod\", \"web\"])"
+  description = "Liste de tags Proxmox pour identifier la VM"
   type        = list(string)
   default     = []
 }

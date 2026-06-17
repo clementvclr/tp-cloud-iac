@@ -1,5 +1,5 @@
 # =============================================================================
-# main.tf — Création d'une VM Proxmox avec cloud-init attaché
+# main.tf - Creation d'une VM Proxmox avec cloud-init attache
 # =============================================================================
 
 # Upload du fichier user-data cloud-init comme "snippet" sur Proxmox.
@@ -15,22 +15,22 @@ resource "proxmox_virtual_environment_file" "user_data" {
   }
 }
 
-# Création effective de la VM par clonage du template cloud-init.
+# Creation effective de la VM par clonage du template cloud-init.
 resource "proxmox_virtual_environment_vm" "vm" {
   name        = var.vm_name
   vm_id       = var.vm_id
   node_name   = var.target_node
   tags        = var.tags
-  description = "VM gérée par OpenTofu — TP Fil Rouge"
+  description = "VM geree par OpenTofu - TP Fil Rouge"
 
-  # Clonage du template (full clone = indépendant du template d'origine)
+  # Clonage du template (full clone = independant du template d'origine)
   clone {
     vm_id = var.template_id
     full  = true
   }
 
-  # Activation de l'agent QEMU (installé via cloud-init) pour que Proxmox
-  # remonte l'IP et l'état réel de la VM
+  # Activation de l'agent QEMU (installe via cloud-init) pour que Proxmox
+  # remonte l'IP et l'etat reel de la VM
   agent {
     enabled = true
   }
@@ -56,7 +56,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     model  = "virtio"
   }
 
-  # Configuration cloud-init injectée dans la VM
+  # Configuration cloud-init injectee dans la VM
   initialization {
     datastore_id = var.storage_pool
 
@@ -71,11 +71,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
       servers = var.dns_servers
     }
 
-    # Référence au snippet user-data uploadé plus haut
+    # Reference au snippet user-data uploade plus haut
     user_data_file_id = proxmox_virtual_environment_file.user_data.id
   }
 
-  # Empêche Terraform de recréer la VM si le template change après coup
+  # Empeche Terraform de recreer la VM si le template change apres coup
   lifecycle {
     ignore_changes = [
       clone,
