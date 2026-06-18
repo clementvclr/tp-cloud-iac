@@ -271,4 +271,3 @@ Le projet suit la convention de commits atomiques avec préfixes sémantiques :
 - `docs:` mise à jour documentation
 =======
 Groupe de 4 — VAUCLARE Clement, DURBEC Lucas, BARBESIER Axel, PINTO Axel
->>>>>>> 695a9f3933a3c57a1e3f286a9134e86baa7a8300
