@@ -208,6 +208,7 @@ L'architecture est conçue pour faciliter un changement de fournisseur (par exem
 
 ## Auteurs
 
+<<<<<<< HEAD
 Groupe de 4 — formation DG-IA
 
 ## Vérification de l'idempotence Ansible
@@ -246,3 +247,6 @@ Le projet suit la convention de commits atomiques avec préfixes sémantiques :
 - `feat:` ajout de fonctionnalité (rôle Ansible, module Terraform)
 - `fix:` correction de bug
 - `docs:` mise à jour documentation
+=======
+Groupe de 4 — VAUCLARE Clement, DURBEC Lucas, BARBESIER Axel, PINTO Axel
+>>>>>>> 695a9f3933a3c57a1e3f286a9134e86baa7a8300
