@@ -208,4 +208,4 @@ L'architecture est conçue pour faciliter un changement de fournisseur (par exem
 
 ## Auteurs
 
-Groupe de 4 — formation DG-IA
+Groupe de 4 — VAUCLARE Clement, DURBEC Lucas, BARBESIER Axel, PINTO Axel
