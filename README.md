@@ -201,14 +201,36 @@ L'architecture est conçue pour faciliter un changement de fournisseur (par exem
 
 ## Captures d'écran (docs/screenshots/)
 
-- 02-terraform-vms-deployed.png — VMs créées par OpenTofu dans Proxmox
-- 04-both-environments-deployed.png — Les 4 VMs (prod + dev) coexistant
-- 05-wikijs-prod-public.png — Wiki.js accessible publiquement sur http://82.64.141.52:3080
-- 06-wikijs-dev-via-tunnel.png — Wiki.js dev accessible via tunnel SSH
+## Captures d'écran de validation
+
+Toutes les captures sont dans `docs/screenshots/` et prouvent le bon fonctionnement de chaque étape du déploiement.
+
+### Infrastructure (OpenTofu)
+
+- **`01-proxmox-vms-deployed-start.png`** : interface Proxmox au démarrage des VMs, prouvant que la création se fait bien via OpenTofu
+- **`01-proxmox-vms-deployed.png`** : interface Proxmox après déploiement complet des 4 VMs (`prod-wiki-db` 201, `prod-wiki-app` 202, `dev-wiki-db` 211, `dev-wiki-app` 212) plus le template cloud-init `ubuntu-24-04-cloudinit` (VM 9000)
+- **`07-tofu-plan-no-changes-prod.png`** : `tofu plan` sur l'environnement prod indiquant `No changes. Your infrastructure matches the configuration.`, ce qui prouve que le code Terraform correspond exactement à l'infrastructure réelle (pas de drift)
+- **`07-tofu-plan-no-changes-dev.png`** : idem pour l'environnement dev, démontrant la reproductibilité dev/prod
+
+### Cloud-init
+
+- **`02-cloud-init-done.png`** : sortie SSH montrant `cloud-init status: done`, l'utilisateur `ansible` créé avec les bons groupes (`sudo`), et le log de fin d'exécution `cloud-init-done.log`. Preuve que cloud-init a bien préparé chaque VM dès le démarrage
+
+### Ansible
+
+- **`03-ansible-first-run.png`** : `PLAY RECAP` du premier passage du playbook, montrant les modifications appliquées (`changed=17` côté app, `changed=13` côté db, `failed=0` partout). Toutes les VMs ont été configurées avec succès
+- **`04-ansible-idempotent.png`** : `PLAY RECAP` du second passage du playbook, montrant `changed=0` sur les deux VMs. Démonstration formelle de l'**idempotence** des rôles Ansible (critère explicite du TP)
+
+### Service public accessible
+
+- **`05-wikijs-public.png`** : Wiki.js en cours de setup, accessible depuis Internet sur `http://82.64.141.52:3080` (URL bien visible dans la barre d'adresse du navigateur). Le service est exposé publiquement via le port forwarding NAT (`82.64.141.52:3080` → `10.0.30.202:3000`) configuré par le formateur
+
+### Bonus — Inventaire Ansible dynamique
+
+- **`06-bonus-dynamic-inventory.png`** : exécution du script `scripts/generate-inventory.sh prod` montrant la génération automatique de l'inventaire Ansible à partir des outputs Terraform. Le fichier généré contient les bons hosts et IPs (`prod-wiki-db: 10.0.30.201`, `prod-wiki-app: 10.0.30.202`), récupérés directement depuis le state OpenTofu
 
 ## Auteurs
 
-<<<<<<< HEAD
 Groupe de 4 — VAUCLARE Clement, BARBESIER Axel, PINTO Axel, DURBEC Lucas
 
 ## Vérification de l'idempotence Ansible
