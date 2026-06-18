@@ -209,7 +209,7 @@ L'architecture est conçue pour faciliter un changement de fournisseur (par exem
 ## Auteurs
 
 <<<<<<< HEAD
-Groupe de 4 — formation DG-IA
+Groupe de 4 — VAUCLARE Clement, BARBESIER Axel, PINTO Axel, DURBEC Lucas
 
 ## Vérification de l'idempotence Ansible
 
