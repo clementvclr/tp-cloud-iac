@@ -209,3 +209,40 @@ L'architecture est conçue pour faciliter un changement de fournisseur (par exem
 ## Auteurs
 
 Groupe de 4 — formation DG-IA
+
+## Vérification de l'idempotence Ansible
+
+Le critère d'évaluation Ansible mentionne explicitement l'idempotence. Pour la vérifier, il suffit de rejouer le playbook une seconde fois après un premier déploiement réussi :
+
+    ansible-playbook -i inventory/prod.yml playbooks/site.yml
+
+Lors du second passage, Ansible doit afficher `changed=0` pour la majorité des tâches (seules les tâches de redémarrage de service peuvent ressortir en changed selon l'état du système). C'est la preuve que les rôles convergent vers un état stable sans modifier inutilement le système.
+
+## Procédure de destruction
+
+Pour détruire complètement un environnement :
+
+    cd terraform/environments/prod   # ou dev
+    tofu destroy
+
+Cela détruit les 2 VMs créées et supprime les snippets cloud-init associés sur Proxmox. Le template (VM 9000) n'est pas affecté.
+
+## Migration vers un autre fournisseur de cloud
+
+L'architecture isole le code spécifique à Proxmox dans le module `terraform/modules/vm/`. Pour migrer vers Azure :
+
+1. Créer un module équivalent `terraform/modules/vm-azure/` avec les ressources Azure (`azurerm_linux_virtual_machine`, `azurerm_network_interface`, etc.)
+2. Exposer la même interface (`var.vm_name`, `var.cpu_cores`, `var.memory_mb`, `var.ip_address`, `var.user_data_path`, etc.)
+3. Modifier la ligne `source = "../../modules/vm"` dans `environments/prod/main.tf` et `environments/dev/main.tf` pour pointer vers le nouveau module
+4. Adapter `terraform.tfvars` aux variables propres à Azure
+
+Le code Ansible n'a pas besoin d'être modifié : il s'appuie uniquement sur SSH vers des IPs, indépendamment du fournisseur sous-jacent.
+
+## Historique Git
+
+Le projet suit la convention de commits atomiques avec préfixes sémantiques :
+
+- `chore:` configuration projet (gitignore, structure)
+- `feat:` ajout de fonctionnalité (rôle Ansible, module Terraform)
+- `fix:` correction de bug
+- `docs:` mise à jour documentation
