@@ -1,6 +1,7 @@
-# =============================================================================,
-# outputs.tf - Informations exposees apres deploiement,
-# =============================================================================,
+# =============================================================================
+# outputs.tf - Informations exposees apres deploiement
+# =============================================================================
+
 output "db_vm" {
   description = "Informations sur la VM base de donnees"
   value = {
@@ -18,3 +19,23 @@ output "app_vm" {
     ipv4 = module.vm_app.ipv4_address
   }
 }
+output "ansible_inventory" {
+  description = "Structure d'inventaire Ansible (format JSON)"
+  value = {
+    database = {
+      hosts = {
+        "${module.vm_db.vm_name}" = {
+          ansible_host = split("/", var.db_ip)[0]
+        }
+      }
+    }
+    app = {
+      hosts = {
+        "${module.vm_app.vm_name}" = {
+          ansible_host = split("/", var.app_ip)[0]
+        }
+      }
+    }
+  }
+}
+

@@ -1,116 +1,211 @@
-TP Fil Rouge — Déploiement automatisé d'une infrastructure web,
-Déploiement reproductible d'une infrastructure Wiki.js (app + base PostgreSQL) sur Proxmox via cloud-init, OpenTofu et Ansible.
+# TP Fil Rouge — Déploiement automatisé d'une infrastructure web
 
-Stack technique,
-cloud-init : provisioning initial des VMs,
-OpenTofu : description de l'infrastructure (Infrastructure as Code),
-Ansible : configuration des middlewares (PostgreSQL, Wiki.js),
-Proxmox VE : hyperviseur cible (architecture conçue pour être portable Azure),
+Déploiement reproductible d'une infrastructure **Wiki.js + PostgreSQL** sur Proxmox VE via cloud-init, OpenTofu et Ansible.
 
-Structure du projet,
-cloud-init/ : fichiers user-data pour cloud-init,
-terraform/ : code OpenTofu
-modules/vm/ : module réutilisable de création de VM,
-environments/ : environnements (dev, prod),
-,
-ansible/ : playbooks et rôles Ansible
-inventory/,
-roles/,
-playbooks/,
-,
+## Vue d'ensemble
 
-Prérequis,
-OpenTofu >= 1.8,
-Ansible >= 2.15,
-Accès à un node Proxmox VE avec un token API,
+Le projet déploie deux environnements identiques (`prod` et `dev`), chacun composé de 2 VMs :
 
-Déploiement,
-À compléter au fur et à mesure du projet.
+- Une VM **base de données** (PostgreSQL 16)
+- Une VM **applicative** (Wiki.js, qui se connecte à la base de l'autre VM)
 
-Auteurs,
-Groupe de 4 — Axel BARBESIER, Axel PINTO, Luca DURBEC, Clément VAUCLARE
+L'environnement de production est exposé publiquement sur `http://82.64.141.52:3080` via un port forwarding NAT mis en place par le formateur sur le routeur en amont du Proxmox.
 
-Étape 1 — Cloud-init,
-Le fichier cloud-init/user-data.yaml est exécuté au premier démarrage de chaque VM créée par OpenTofu. Il :
+## Stack technique
 
-Met à jour le système (apt update && apt upgrade),
-Installe qemu-guest-agent (pour la visibilité Proxmox) et python3 (pour Ansible),
-Crée l'utilisateur ansible avec sudo sans mot de passe,
-Dépose les clés SSH publiques des membres du groupe,
-Durcit la configuration SSH (pas de root login, pas d'auth par mot de passe),
+| Outil | Rôle | Version |
+|:------|:-----|:--------|
+| cloud-init | Provisioning initial des VMs (utilisateur, clés SSH, paquets, durcissement) | natif Ubuntu cloud-image |
+| OpenTofu | Description et création de l'infrastructure | >= 1.8 |
+| Provider bpg/proxmox | Connecteur Proxmox pour OpenTofu | ~> 0.66 |
+| Ansible | Configuration des middlewares (PostgreSQL, Wiki.js) | >= 2.15 |
+| Proxmox VE | Hyperviseur cible | 9.2 |
+| Ubuntu Server | OS des VMs | 24.04 LTS (Noble) |
+| PostgreSQL | Base de données pour Wiki.js | 16 |
+| Node.js | Runtime pour Wiki.js | 20 LTS |
+| Wiki.js | Application wiki (latest release) | 2.x |
 
-Les clés SSH publiques sont commitées en clair dans ce fichier — c'est OK car les clés publiques sont prévues pour être partagées. Les clés privées correspondantes sont gérées par chaque membre individuellement et ne sont JAMAIS commitées (cf. .gitignore).
+## Architecture
 
-## Étape 1 — Cloud-init
+- Réseau interne Proxmox : 10.0.30.0/24, gateway 10.0.30.1, bridge vmbr0
+- Prod : prod-wiki-db (VM 201, 10.0.30.201) + prod-wiki-app (VM 202, 10.0.30.202)
+- Dev : dev-wiki-db (VM 211, 10.0.30.211) + dev-wiki-app (VM 212, 10.0.30.212)
+- Template cloud-init : ubuntu-24-04-cloudinit (VM ID 9000)
+- Accès externe au Proxmox : UI Proxmox sur 82.64.141.52:3006, SSH sur 82.64.141.52:3007
+- Accès au service Wiki.js public : 82.64.141.52:3080 (NAT -> 10.0.30.202:3000)
 
-Le fichier `cloud-init/user-data.yaml` est exécuté au premier démarrage de chaque VM créée par OpenTofu. Il :
+## Structure du projet
 
-- Met à jour le système (`apt update && apt upgrade`)
-- Installe `qemu-guest-agent` (pour la visibilité Proxmox) et `python3` (pour Ansible)
-- Crée l'utilisateur `ansible` avec sudo sans mot de passe
-- Dépose les clés SSH publiques des membres du groupe
-- Durcit la configuration SSH (pas de root login, pas d'auth par mot de passe)
+- `cloud-init/user-data.yaml` : config cloud-init commune aux VMs
+- `terraform/modules/vm/` : module réutilisable de création de VM Proxmox
+- `terraform/environments/prod/` : environnement production (2 vCPU, 2 Go, 20 Go par VM)
+- `terraform/environments/dev/` : environnement développement (1 vCPU, 1 Go, 10 Go par VM)
+- `ansible/ansible.cfg` : configuration Ansible
+- `ansible/inventory/prod.yml` et `dev.yml` : inventaires statiques
+- `ansible/roles/common/` : paquets de base, hostname, UFW
+- `ansible/roles/postgresql/` : PostgreSQL + base wikijs + règles pg_hba
+- `ansible/roles/wikijs/` : Node.js + Wiki.js + service systemd
+- `ansible/playbooks/site.yml` : playbook principal
+- `scripts/generate-inventory.sh` : bonus — génère un inventaire Ansible depuis les outputs Terraform
+- `docs/screenshots/` : captures d'écran de validation
 
-Les clés SSH publiques sont commitées en clair dans ce fichier — c'est OK car les clés **publiques** sont prévues pour être partagées. Les clés **privées** correspondantes sont gérées par chaque membre individuellement et ne sont JAMAIS commitées (cf. `.gitignore`).
+## Prérequis (poste de travail)
 
-## Étape 2 — OpenTofu
+Testé sur WSL2 Ubuntu 24.04. Installation :
 
-### Architecture du code
+    # OpenTofu
+    curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh -o install-opentofu.sh
+    chmod +x install-opentofu.sh
+    ./install-opentofu.sh --install-method deb
 
-Le code OpenTofu suit un modèle module + environnements :
+    # Ansible et collections requises
+    sudo apt install -y ansible
+    ansible-galaxy collection install community.general community.postgresql
 
-- `terraform/modules/vm/` : module réutilisable de création de VM Proxmox avec cloud-init
-- `terraform/environments/prod/` : environnement de production (2 vCPU, 2 Go RAM, 20 Go)
-- `terraform/environments/dev/` : environnement de développement (1 vCPU, 1 Go RAM, 10 Go)
+## Configuration SSH locale (bastion via ProxyJump)
 
-Cette structure permet de redéployer un environnement strictement identique en changeant uniquement les valeurs du fichier `terraform.tfvars`.
+Le Proxmox est exposé sur des ports non-standards (NAT du formateur). On utilise un bastion SSH pour atteindre les VMs internes. Créer `~/.ssh/config` :
 
-### Déploiement
+    Host proxmox-tp
+        HostName 82.64.141.52
+        Port 3007
+        User root
+        IdentityFile ~/.ssh/tp_filrouge
+        IdentitiesOnly yes
 
-bash
-cd terraform/environments/prod
-cp terraform.tfvars.example terraform.tfvars
-# Éditer terraform.tfvars avec les vraies valeurs Proxmox
-tofu init
-tofu plan
-tofu apply
+    Host wiki-db
+        HostName 10.0.30.201
+        User ansible
+        IdentityFile ~/.ssh/tp_filrouge
+        ProxyJump proxmox-tp
 
+    Host wiki-app
+        HostName 10.0.30.202
+        User ansible
+        IdentityFile ~/.ssh/tp_filrouge
+        ProxyJump proxmox-tp
 
-Le déploiement crée 2 VMs :
+Pousser sa clé sur le Proxmox une seule fois :
 
-- `prod-wiki-db` (VM ID 201) : future base PostgreSQL
-- `prod-wiki-app` (VM ID 202) : future application Wiki.js
+    ssh-copy-id -i ~/.ssh/tp_filrouge.pub proxmox-tp
 
+## Préparation Proxmox (one-shot)
 
-### Procédure de déploiement vérifiée
+Ces opérations sont à faire une seule fois sur le node Proxmox.
 
-1. Créer le template cloud-init sur Proxmox (une seule fois) :
+### 1. Activer le content-type snippets sur le datastore local
 
-bash
-   ssh -p 3007 root@<proxmox-host>
-   cd /var/lib/vz/template/iso
-   wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
-   qm create 9000 --name ubuntu-24-04-cloudinit --memory 2048 --cores 2 \
-     --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single \
-     --serial0 socket --vga serial0 --agent enabled=1
-   qm importdisk 9000 noble-server-cloudimg-amd64.img local-lvm
-   qm set 9000 --scsi0 local-lvm:vm-9000-disk-0,discard=on,ssd=1
-   qm set 9000 --ide2 local-lvm:cloudinit
-   qm set 9000 --boot order=scsi0
-   qm set 9000 --kvm 0 --cpu qemu64    # nécessaire pour virtualisation imbriquée
-   qm template 9000
+Nécessaire pour qu'OpenTofu puisse y uploader les fichiers cloud-init :
 
+    ssh proxmox-tp "pvesm set local --content backup,iso,vztmpl,import,snippets"
 
-2. Activer le content type `snippets` sur le datastore `local` (une seule fois) :
-bash
-   pvesm set local --content backup,iso,vztmpl,import,snippets
+### 2. Créer le template cloud-init Ubuntu 24.04 (VM ID 9000)
 
+    ssh proxmox-tp
+    cd /var/lib/vz/template/iso
+    wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 
-3. Déployer l'infrastructure :
-bash
-   cd terraform/environments/prod
-   cp terraform.tfvars.example terraform.tfvars
-   # éditer terraform.tfvars avec les vraies valeurs
-   tofu init
-   tofu plan
-   tofu apply
+    qm create 9000 --name ubuntu-24-04-cloudinit --memory 2048 --cores 2 \
+        --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single \
+        --serial0 socket --vga serial0 --agent enabled=1
+
+    qm importdisk 9000 noble-server-cloudimg-amd64.img local-lvm
+    qm set 9000 --scsi0 local-lvm:vm-9000-disk-0,discard=on,ssd=1
+    qm set 9000 --ide2 local-lvm:cloudinit
+    qm set 9000 --boot order=scsi0
+
+    # Le Proxmox du formateur tourne en virtualisation imbriquée sans
+    # extensions hardware exposées. On désactive l'accélération KVM et
+    # on utilise un type CPU compatible émulation.
+    qm set 9000 --kvm 0 --cpu qemu64
+
+    qm template 9000
+    exit
+
+### 3. Créer un token API Proxmox
+
+Dans l'UI Proxmox : Datacenter -> Permissions -> API Tokens -> Add
+
+- User : root@pam
+- Token ID : tp-filrouge
+- Décocher Privilege Separation (sinon le token n'a aucune permission)
+- Copier immédiatement le secret affiché (il n'est plus jamais montré)
+
+Format final à utiliser : root@pam!tp-filrouge=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+## Déploiement
+
+### Étape 1 — Infrastructure (OpenTofu)
+
+Pour chaque environnement (prod ou dev) :
+
+    cd terraform/environments/prod   # ou dev
+    cp terraform.tfvars.example terraform.tfvars
+    # Renseigner terraform.tfvars avec les vraies valeurs (token API, mot de passe SSH, etc.)
+    tofu init
+    tofu plan
+    tofu apply
+
+Résultat : 2 VMs sont créées sur Proxmox, démarrées, avec cloud-init exécuté (utilisateur ansible, clés SSH, qemu-guest-agent, durcissement SSH).
+
+### Étape 2 — Configuration (Ansible)
+
+Méthode 1 — inventaire statique :
+
+    cd ansible
+    ansible -i inventory/prod.yml all -m ping
+    ansible-playbook -i inventory/prod.yml playbooks/site.yml
+
+Méthode 2 (bonus) — inventaire généré dynamiquement depuis Terraform :
+
+    ./scripts/generate-inventory.sh prod
+    cd ansible
+    ansible-playbook -i inventory/prod.generated.yml playbooks/site.yml
+
+Le playbook exécute, dans l'ordre :
+
+1. Rôle common sur les 2 VMs (paquets de base, hostname, UFW)
+2. Rôle postgresql sur la VM database (PostgreSQL 16, base wikijs, pg_hba pour la VM app uniquement)
+3. Rôle wikijs sur la VM app (Node.js 20, Wiki.js latest, service systemd, port 3000)
+
+### Étape 3 — Accès
+
+- Wiki.js prod : http://82.64.141.52:3080 (via NAT du formateur)
+- Wiki.js dev : accessible en interne uniquement (10.0.30.212:3000), testable via un tunnel SSH :
+
+      ssh -L 8081:10.0.30.212:3000 proxmox-tp
+      # puis ouvrir http://localhost:8081 dans le navigateur
+
+## Sécurité
+
+- Aucun secret en clair dans le repo : *.tfvars, clés SSH privées et *.pem sont dans .gitignore
+- Authentification SSH uniquement par clé sur les VMs (PasswordAuthentication no)
+- PermitRootLogin no sur les VMs
+- UFW activé sur toutes les VMs avec règles minimales (SSH + ports applicatifs)
+- PostgreSQL n'accepte les connexions que depuis la VM applicative correspondante (pg_hba.conf restrictif)
+- Token API Proxmox dédié, pas d'authentification par mot de passe pour OpenTofu (sauf SSH pour upload des snippets cloud-init, limite de l'API Proxmox)
+
+## Portabilité multi-fournisseur
+
+L'architecture est conçue pour faciliter un changement de fournisseur (par exemple Proxmox -> Azure) :
+
+- La logique de création de VM est isolée dans un module unique (terraform/modules/vm/)
+- Les environnements (prod, dev) appellent le module avec des paramètres : changer le module sous-jacent (par exemple modules/vm-azure/) suffirait à migrer
+- Le code Ansible est totalement indépendant du fournisseur : il ne fait que du SSH vers des IPs
+
+## Bonus implémentés
+
+- Inventaire Ansible dynamique généré depuis les outputs Terraform via scripts/generate-inventory.sh
+- Bastion SSH via ProxyJump (pas d'IP publique exposée par VM, surface d'attaque réduite)
+- Idempotence : tous les rôles Ansible peuvent être rejoués sans casser l'existant
+
+## Captures d'écran (docs/screenshots/)
+
+- 02-terraform-vms-deployed.png — VMs créées par OpenTofu dans Proxmox
+- 04-both-environments-deployed.png — Les 4 VMs (prod + dev) coexistant
+- 05-wikijs-prod-public.png — Wiki.js accessible publiquement sur http://82.64.141.52:3080
+- 06-wikijs-dev-via-tunnel.png — Wiki.js dev accessible via tunnel SSH
+
+## Auteurs
+
+Groupe de 4 — formation DG-IA
