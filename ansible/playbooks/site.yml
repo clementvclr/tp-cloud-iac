@@ -1,0 +1,21 @@
+# =============================================================================
+# Playbook principal - configure toute l'infra Wiki.js
+# =============================================================================
+
+- name: Configuration de base sur toutes les VMs
+  hosts: all
+  gather_facts: true
+  roles:
+    - common
+
+- name: Deployer PostgreSQL sur la VM base de donnees
+  hosts: database
+  gather_facts: true
+  roles:
+    - postgresql
+
+- name: Deployer Wiki.js sur la VM applicative
+  hosts: app
+  gather_facts: true
+  roles:
+    - wikijs

@@ -1,0 +1,13 @@
+wikijs_install_dir: /opt/wikijs
+wikijs_user: wikijs
+wikijs_port: 3000
+
+# Connexion a la base PostgreSQL (sur la VM db)
+wikijs_db_host: "10.0.30.201"
+wikijs_db_port: 5432
+wikijs_db_name: wikijs
+wikijs_db_user: wikijs
+wikijs_db_password: "ChangeMe-WikiJS-2026!"
+
+# Node.js
+nodejs_version: "20"

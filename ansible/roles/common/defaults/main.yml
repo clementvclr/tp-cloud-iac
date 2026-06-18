@@ -1,0 +1,16 @@
+# Paquets installés sur toutes les VMs
+common_packages:
+  - vim
+  - htop
+  - net-tools
+  - curl
+  - ca-certificates
+  - gnupg
+  - ufw
+
+# Activer le pare-feu UFW
+common_ufw_enabled: true
+
+# Ports ouverts par defaut (SSH uniquement)
+common_ufw_allowed_ports:
+  - "22"

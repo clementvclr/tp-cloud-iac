@@ -1,0 +1,61 @@
+# =============================================================================
+# Role postgresql - installation et configuration pour Wiki.js
+# =============================================================================
+
+- name: Installer PostgreSQL et ses dependances
+  ansible.builtin.apt:
+    name:
+      - "postgresql-{{ postgresql_version }}"
+      - python3-psycopg2
+      - acl
+    state: present
+    update_cache: true
+  become: true
+
+- name: S'assurer que PostgreSQL est demarre et active au boot
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+  become: true
+
+- name: Creer l'utilisateur PostgreSQL pour Wiki.js
+  community.postgresql.postgresql_user:
+    name: "{{ wikijs_db_user }}"
+    password: "{{ wikijs_db_password }}"
+    state: present
+  become: true
+  become_user: postgres
+
+- name: Creer la base Wiki.js
+  community.postgresql.postgresql_db:
+    name: "{{ wikijs_db_name }}"
+    owner: "{{ wikijs_db_user }}"
+    encoding: UTF-8
+    state: present
+  become: true
+  become_user: postgres
+
+- name: Configurer l'ecoute reseau de PostgreSQL
+  ansible.builtin.lineinfile:
+    path: "/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+    regexp: "^#?listen_addresses\\s*="
+    line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+  become: true
+  notify: Redemarrer PostgreSQL
+
+- name: Autoriser la VM applicative a se connecter
+  ansible.builtin.lineinfile:
+    path: "/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
+    line: "host    {{ wikijs_db_name }}    {{ wikijs_db_user }}    {{ wikijs_app_ip }}/32    md5"
+    state: present
+  become: true
+  notify: Redemarrer PostgreSQL
+
+- name: Ouvrir le port PostgreSQL dans UFW pour la VM app
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ wikijs_app_ip }}"
+    port: "{{ postgresql_port }}"
+    proto: tcp
+  become: true

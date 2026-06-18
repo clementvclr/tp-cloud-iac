@@ -1,0 +1,13 @@
+postgresql_version: "16"
+
+# Base de donnees Wiki.js
+wikijs_db_name: wikijs
+wikijs_db_user: wikijs
+wikijs_db_password: "ChangeMe-WikiJS-2026!"   # A surcharger via vault en prod
+
+# Adresse IP de la VM applicative autorisee a se connecter
+wikijs_app_ip: "10.0.30.202"
+
+# Adresse d'ecoute PostgreSQL
+postgresql_listen_addresses: "*"
+postgresql_port: 5432

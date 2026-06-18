@@ -1,0 +1,45 @@
+# =============================================================================
+# Role common - configuration de base appliquee a toutes les VMs
+# =============================================================================
+
+- name: Mettre a jour le cache apt
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Installer les paquets de base
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+  become: true
+
+- name: Definir le hostname de la VM
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  become: true
+
+- name: S'assurer que /etc/hosts contient le hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ inventory_hostname }}"
+    state: present
+  become: true
+
+- name: Configurer UFW - regles autorisees
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ common_ufw_allowed_ports }}"
+  become: true
+  when: common_ufw_enabled
+
+- name: Activer UFW
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+  become: true
+  when: common_ufw_enabled

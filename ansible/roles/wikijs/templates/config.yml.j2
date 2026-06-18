@@ -1,0 +1,15 @@
+# Wiki.js config - genere par Ansible, ne pas modifier a la main
+port: {{ wikijs_port }}
+bindIP: 0.0.0.0
+db:
+  type: postgres
+  host: {{ wikijs_db_host }}
+  port: {{ wikijs_db_port }}
+  user: {{ wikijs_db_user }}
+  pass: {{ wikijs_db_password }}
+  db: {{ wikijs_db_name }}
+  ssl: false
+logLevel: info
+logFormat: default
+offline: false
+dataPath: ./data 
